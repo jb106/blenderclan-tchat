@@ -1,0 +1,6 @@
+{
+    "prod": true,
+    "express": {
+        "port": 8080
+    }
+}
