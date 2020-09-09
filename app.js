@@ -5,6 +5,7 @@ let socketio = require('socket.io')
 let striptags = require('striptags')
 
 let config = require('./config')
+const { isNullOrUndefined } = require('util')
 
 //Module dev dependencies
 let morgan
@@ -23,6 +24,7 @@ const options =
 
 //Variables globales
 let usernames = []
+let usernamesColors = []
 let peopleWriting = []
 
 //Middlewares
@@ -48,7 +50,7 @@ io.on('connection', function (socket)
     console.log('a user connected : '+socket.id);
 
     //Assignation d'un username
-    socket.on('setUsername', (usernameWanted) => {
+    socket.on('setUsername', (usernameWanted, colorPicked) => {
 
         //Traitement string
         usernameWanted = striptags(usernameWanted.trim())
@@ -62,21 +64,32 @@ io.on('connection', function (socket)
                 usernametaken = true
             }
         }
+
+        let incorrectSyntax = false
+
+        if(usernameWanted == "")
+        {
+            incorrectSyntax = true
+        }
         
         //Traitement final
         let timeFakeLoading = 1000
         setTimeout(() => { 
-            if(usernametaken)
+            if(usernametaken || incorrectSyntax)
             {
-                socket.emit('rejectUsername', usernameWanted)
+                socket.emit('rejectUsername', usernameWanted, incorrectSyntax)
             }
             else
             {
                 socket.join('users', () => {
                     usernames[socket.id] = usernameWanted
+                    usernamesColors[usernameWanted] = colorPicked
+
                     let justUsernames = getUsernames()
-                    socket.emit('acceptUsername', usernameWanted, justUsernames)
-                    socket.to('users').emit('newUser', usernameWanted, justUsernames)
+                    let justUsernamesColors = getUsernamesColors()
+
+                    socket.emit('acceptUsername', usernameWanted, justUsernames, justUsernamesColors)
+                    socket.to('users').emit('newUser', usernameWanted, justUsernames, justUsernamesColors, colorPicked)
                 })
             }
         }, timeFakeLoading)
@@ -85,12 +98,27 @@ io.on('connection', function (socket)
 
     //Reception d'un message
     socket.on('sendMessage', (text) => {
-        text = striptags(text.trim())
+        text = striptags(text.trim(), '<b><i><p>')
 
         if(text != "")
         {
-            socket.to('users').emit('newMessage', text, usernames[socket.id])
-            socket.emit('confirmMessage', text)
+            if(usernames[socket.id] == undefined)
+            {
+                socket.emit("wrongConnection")
+            }
+            else
+            {
+                socket.to('users').emit('newMessage', text, usernames[socket.id], usernamesColors[usernames[socket.id]])
+                socket.emit('confirmMessage', text)
+            }
+        }
+    })
+
+    //Check en continu pour vérifier qu'on est bien connecté à la même salle
+    socket.on('checkConnection', (username) => {
+        if(usernames[socket.id] == undefined)
+        {
+            socket.emit("wrongConnection")
         }
     })
 
@@ -118,15 +146,18 @@ io.on('connection', function (socket)
         if(usernames[socket.id])
         {
             const tempUserName = usernames[socket.id]
+            const tempsUserNameColor = usernamesColors[tempUserName]
+
             delete usernames[socket.id]
-            socket.to('users').emit('leftUser', tempUserName, getUsernames())
+            delete usernamesColors[tempUserName]
+            socket.to('users').emit('leftUser', tempUserName, getUsernames(), getUsernamesColors(), tempsUserNameColor)
         }
     })
 })
 
 //Lancement de l'application
-server.listen(process.env.PORT || 5000, () => {
-    console.log("Server started on port "+port)
+server.listen(process.env.PORT || port, () => {
+    console.log("Server started on port "+ (process.env.PORT || port))
 });
 
 
@@ -141,4 +172,16 @@ function getUsernames()
     }
 
     return users
+}
+
+function getUsernamesColors()
+{
+    let colors = []
+
+    for(let username in usernamesColors)
+    {
+        colors.push(usernamesColors[username])
+    }
+
+    return colors
 }

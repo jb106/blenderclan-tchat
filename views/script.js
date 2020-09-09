@@ -33,13 +33,13 @@ msgerForm.addEventListener("submit", event => {
 });
 */
 //<div class="msg-img" style="background-image: url(${img})"></div>
-function appendMessage(name, side, text) {
+function appendMessage(name, side, text, pseudoColor) {
   //   Simple solution for small apps
   const msgHTML = `
     <div class="msg ${side}-msg">
       <div class="msg-bubble">
         <div class="msg-info">
-          <div class="msg-info-name">${name}</div>
+          <div class="msg-info-name" style="color: ${pseudoColor}">${name}</div>
           <div class="msg-info-time">${formatDate(new Date())}</div>
         </div>
 
@@ -98,6 +98,7 @@ function random(min, max) {
 var modalContainer = document.body.querySelector('#modal-container')
 var chatHeaderContainer = document.body.querySelector('#chatHeader')
 let usersCount = chatHeaderContainer.querySelector("#usersCount")
+let usersDetails = chatHeaderContainer.querySelector("#usersDetails")
 
 function openModal() {
     modalContainer.classList.remove('out')
@@ -109,25 +110,31 @@ function closeModal() {
     document.body.classList.remove('modal-active')
 }
 
-function updateUsersCount(users)
+function updateUsersCount(users, colors)
 {
   usersCount.innerHTML = users.length + (users.length == 1 ? " utilisateur connecté" : " utilisateurs connectés")
+  usersDetails.innerHTML = ""
+
+  let nameList = []
+  users.map((username, index) => {
+    usersDetails.innerHTML += ` <nobr style='color: ${colors[index]}'">` + username + "</nobr> |"
+  })
 }
 
 //Message d'un nouvel utilisateur
-function messageNewUser(newUser)
+function messageNewUser(newUser, _color)
 {
-  appendUserStatus("left", getStatusMessage(newUser, welcomeSentences));
+  appendUserStatus("left", getStatusMessage(newUser, welcomeSentences, _color));
 }
 //Message d'un utilisateur qui est parti
-function messageLeftUser(leftUser)
+function messageLeftUser(leftUser, _color)
 {
-  appendUserStatus("left", getStatusMessage(leftUser, goodbyeSentences));
+  appendUserStatus("left", getStatusMessage(leftUser, goodbyeSentences, _color));
 }
 
-function getStatusMessage(username, sentences)
+function getStatusMessage(username, sentences, usernameColor)
 {
   let msg = sentences[Math.floor(Math.random() * sentences.length)]
-  msg = msg.replace("$username", "<b>"+username+"</b>")
+  msg = msg.replace("$username", `<b style="color: ${usernameColor}">`+username+"</b>")
   return msg
 }

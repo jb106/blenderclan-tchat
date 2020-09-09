@@ -18,6 +18,7 @@
             <input autofocus type="text" name="username" id="inputUsername">
             <div class="loader hidden" id="loaderUsername"></div>
         </form>
+        <div id="colorButtons" class="colorsContainer"></div>
     </div>
 </div>
 
@@ -26,6 +27,8 @@
   <header class="msger-header">
     <div class="msger-header-title">
       <i class="fas fa-comment-alt"></i> The Blender Clan Tchat | <b id="usersCount"></b>
+      <br>
+      <p id="usersDetails"></p>
     </div>
     <div class="msger-header-options">
       <span><i class="fas fa-cog"></i></span>
@@ -93,18 +96,36 @@
     let inputUsername = formUsername.querySelector("#inputUsername")
     let loadertUsername = formUsername.querySelector("#loaderUsername")
     let messageRawInput = document.body.querySelector("#inputMessage")
+    let colorButtonsContainer = document.body.querySelector("#colorButtons")
     
     const messageInputForm = get(".msger-inputarea");
     const messageInputText = get(".msger-input");
+    const colors = ["#FA8072", "#DC143C", "#FF1493", "#FFA500", "#BDB76B", "#DA70D6", "#8A2BE2", "#2E8B57", "#008B8B", "#4682B4", "#D2691E"]
+
+    const baseTitle = "BC Tchat"
 
     let username
     let allUsers
+    let allUsersColors
+    let colorPicked = colors[0]
+
+    //Couleurs dans la connexion
+    colors.map((color, index) => {
+      colorButtonsContainer.innerHTML += `<button id=${index} style='background-color: ${color}; width: 30px; height: 30px; border-radius: 4px; margin: 2px;'>`
+    })
+
+    colorButtonsContainer.onclick = pickColor
+
+    function pickColor(e)
+    {
+      colorPicked = colors[e.target.id]
+    }
 
     //Formulaire de connexion
     formUsername.addEventListener('submit', (event) => {
       event.preventDefault()
       let usernameWanted = inputUsername.value
-      socket.emit('setUsername', usernameWanted)
+      socket.emit('setUsername', usernameWanted, colorPicked)
       inputUsername.classList.add("hidden")
       loadertUsername.classList.remove("hidden")
     })
@@ -115,77 +136,141 @@
       sendMessage()
     });
 
+    //Detection changement tab
+    document.addEventListener('visibilitychange', function(e) {
+        if(!document.hidden)
+          document.title = baseTitle
+    });
+
 
     //Detection écriture
     let isWriting = false
     let stopWriting
     messageRawInput.addEventListener('keydown', (event) => {
-      if(event.keyCode != 13)
+      if(username == undefined)
       {
-        clearTimeout(stopWriting)
-        if(isWriting == false)
-        {    
-          isWriting = true
-          socket.emit('startWriting')
-        }
-
-        stopWriting = setTimeout(() => {
-          isWriting = false
+        if(isWriting)
           socket.emit('stopWriting')
-        }, 1000);
+      }
+      else
+      {
+        if(event.keyCode != 13)
+        {
+          clearTimeout(stopWriting)
+          if(isWriting == false)
+          {    
+            isWriting = true
+            socket.emit('startWriting')
+          }
+
+          stopWriting = setTimeout(() => {
+            isWriting = false
+            socket.emit('stopWriting')
+          }, 1000);
+        }
       }
     })
 
+    setInterval(() => {
+      if(username != undefined)
+        socket.emit("checkConnection", username)
+    }, 3000);
 
     function sendMessage()
     {
-      let text = messageInputText.value.trim()
-      if(text != '')
+      if(username == undefined)
       {
-        socket.emit('sendMessage', text)
-        messageInputText.value = ''
+        openModal()
+      }
+      else
+      {
+        let text = messageInputText.value.trim()
+        if(text != '')
+        {
+          socket.emit('sendMessage', text)
+          messageInputText.value = ''
 
-        //Traitement detection écriture
-          isWriting = false
-          clearTimeout(stopWriting)
-          socket.emit('stopWriting')
+          //Traitement detection écriture
+            isWriting = false
+            clearTimeout(stopWriting)
+            socket.emit('stopWriting')
+        }
       }
 
     }
 
     //réponse serveur
-    socket.on('acceptUsername', (_username, _allUsers) => {
+    socket.on('acceptUsername', (_username, _allUsers, _usernamesColors) => {
       username = _username
       allUsers = _allUsers
+      allUsersColors = _usernamesColors
       closeModal()
-      updateUsersCount(_allUsers)
+      updateUsersCount(_allUsers, _usernamesColors)
     })
 
-    socket.on("rejectUsername", (_username) => {
+    socket.on("rejectUsername", (_username, _incorrectSyntax) => {
       inputUsername.value = ''
-      inputUsername.setAttribute('placeholder', "Le pseudo "+_username+" est déjà utilisé")
+      inputUsername.setAttribute('placeholder', _incorrectSyntax ? "Le pseudo est incorrect" : "Le pseudo "+_username+" est déjà utilisé")
       
       inputUsername.classList.remove("hidden")
       loadertUsername.classList.add("hidden")
     })
 
+    //Sécurité en cas de mauvaise connexion (pas dans la room)
+    socket.on("wrongConnection", () => {
+      username = null
+
+      if(document.hidden)
+      {
+        document.title = "Erreur de connexion"
+      }
+
+      inputUsername.value = ''
+      inputUsername.setAttribute('placeholder', "Il y a eu un problème de connexion...")
+
+      inputUsername.classList.remove("hidden")
+      loadertUsername.classList.add("hidden")
+      openModal()
+    })
+
     //Connexion d'un nouvel utilisateur
-    socket.on('newUser', (newUsername, _allUsers) => {
+    socket.on('newUser', (newUsername, _allUsers, _usernamesColors, _colorPicked) => {
+
+      if(document.hidden)
+      {
+        document.title = newUsername + " se connecte !"
+      }
+
       allUsers = _allUsers
-      updateUsersCount(_allUsers)
-      messageNewUser(newUsername)
+      allUsersColors = _usernamesColors
+      updateUsersCount(_allUsers, _usernamesColors)
+      messageNewUser(newUsername, _colorPicked)
     })
 
     //Déconnexion d'un utilisateur
-    socket.on('leftUser', (leftUser, _allUsers) => {
+    socket.on('leftUser', (leftUser, _allUsers, _usernamesColors, _colorPicked) => {
+      if(document.hidden)
+      {
+        document.title = leftUser + " se déconnecte !"
+      }
+
       allUsers = _allUsers
-      updateUsersCount(_allUsers)
-      messageLeftUser(leftUser)
+      allUsersColors = _usernamesColors
+      updateUsersCount(_allUsers, _usernamesColors)
+      messageLeftUser(leftUser, _colorPicked)
     })
 
     //Affichage d'un message
-    socket.on('confirmMessage', (text) => appendMessage(username, 'right', text))
-    socket.on('newMessage', (text, usernameSender) => appendMessage(usernameSender, 'left', text))
+    socket.on('confirmMessage', (text) => appendMessage(username, 'right', text, colorPicked))
+    socket.on('newMessage', (text, usernameSender, usernameSenderColor) => {
+      
+      if(document.hidden)
+      {
+        document.title = usernameSender + " a écrit !"
+      }
+
+      appendMessage(usernameSender, 'left', text, usernameSenderColor)
+    })
 
     //Information écriture
     socket.on('userStartWriting', (peopleWriting) => {
