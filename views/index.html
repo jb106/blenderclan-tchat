@@ -89,6 +89,7 @@
 <!-- partial -->
   <script src='https://use.fontawesome.com/releases/v5.0.13/js/all.js'></script><script  src="./script.js"></script>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
   <script>
     var socket=io();
 
@@ -103,6 +104,15 @@
     const colors = ["#FA8072", "#DC143C", "#FF1493", "#FFA500", "#BDB76B", "#DA70D6", "#8A2BE2", "#2E8B57", "#008B8B", "#4682B4", "#D2691E"]
 
     const baseTitle = "BC Tchat"
+
+    var neededData; 
+    
+    jQuery.getJSON('http://jeanbaptiste-leonelli.fr/blenderclan_gethistory.php', function(data) {
+    // JSON result in `data` variable
+      neededData = data;
+    });
+
+    console.log(neededData);
 
     let username
     let allUsers

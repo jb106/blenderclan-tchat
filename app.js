@@ -3,6 +3,7 @@ let express = require('express')
 let http = require('http')
 let socketio = require('socket.io')
 let striptags = require('striptags')
+let mysql = require('mysql')
 
 let config = require('./config')
 const { isNullOrUndefined } = require('util')
@@ -16,7 +17,9 @@ if(!config.prod)
 const app = express()
 const server = http.Server(app)
 const io = socketio(server)
-const port = config.express.port
+
+const port = process.env.PORT || config.express.port;
+
 const options = 
 {
     root: __dirname + '/views'
@@ -156,8 +159,8 @@ io.on('connection', function (socket)
 })
 
 //Lancement de l'application
-server.listen(process.env.PORT || port, () => {
-    console.log("Server started on port "+ (process.env.PORT || port))
+server.listen(port, () => {
+    console.log("Server started on port "+ port)
 });
 
 

@@ -1,5 +1,5 @@
 {
-    "prod": true,
+    "prod": false,
     "express": {
         "port": 8080
     }
