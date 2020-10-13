@@ -4,6 +4,7 @@ let http = require('http')
 let socketio = require('socket.io')
 let striptags = require('striptags')
 let mysql = require('mysql')
+let axios = require('axios')
 
 let config = require('./config')
 const { isNullOrUndefined } = require('util')
@@ -113,6 +114,21 @@ io.on('connection', function (socket)
             {
                 socket.to('users').emit('newMessage', text, usernames[socket.id], usernamesColors[usernames[socket.id]])
                 socket.emit('confirmMessage', text)
+                
+                axios
+                .post('http://jeanbaptiste-leonelli.fr/blenderclan_appendnewmessage.php', {
+                username: usernames[socket.id],
+                usercolor: usernamesColors[usernames[socket.id]],
+                messagecontent: text,
+                messagedate: formatDate(new Date()),
+                passcheck: "9173515316157fsdfds54a6dza6za4d"
+                })
+                .then(res => {
+                console.log(res)
+                })
+                .catch(error => {
+                console.error(error)
+                })
             }
         }
     })
@@ -187,4 +203,11 @@ function getUsernamesColors()
     }
 
     return colors
+}
+
+function formatDate(date) {
+    const h = "0" + date.getHours();
+    const m = "0" + date.getMinutes();
+
+    return `${h.slice(-2)}:${m.slice(-2)}`;
 }

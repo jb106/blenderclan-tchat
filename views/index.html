@@ -105,14 +105,14 @@
 
     const baseTitle = "BC Tchat"
 
-    var neededData; 
-    
-    $.getJSON('http://jeanbaptiste-leonelli.fr/blenderclan_gethistory.php', function(data) {
-    // JSON result in `data` variable
-      neededData = data;
-    });
+    let messagesHistory;
 
-    console.log(neededData);
+    $.get("http://jeanbaptiste-leonelli.fr/blenderclan_gethistory.php", function(data) {
+        var json = {
+            html: JSON.stringify(data)
+        };
+        messagesHistory = JSON.parse(data);
+        });
 
     let username
     let allUsers
@@ -216,6 +216,7 @@
       allUsersColors = _usernamesColors
       closeModal()
       updateUsersCount(_allUsers, _usernamesColors)
+      addMessagesHistory(messagesHistory);
     })
 
     socket.on("rejectUsername", (_username, _incorrectSyntax) => {
@@ -271,7 +272,7 @@
     })
 
     //Affichage d'un message
-    socket.on('confirmMessage', (text) => appendMessage(username, 'right', text, colorPicked))
+    socket.on('confirmMessage', (text) => appendMessage(username, 'right', text, colorPicked, formatDate(new Date())))
     socket.on('newMessage', (text, usernameSender, usernameSenderColor) => {
       
       if(document.hidden)
@@ -279,7 +280,7 @@
         document.title = usernameSender + " a écrit !"
       }
 
-      appendMessage(usernameSender, 'left', text, usernameSenderColor)
+      appendMessage(usernameSender, 'left', text, usernameSenderColor, formatDate(new Date()))
     })
 
     //Information écriture

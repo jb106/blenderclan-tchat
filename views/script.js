@@ -33,14 +33,14 @@ msgerForm.addEventListener("submit", event => {
 });
 */
 //<div class="msg-img" style="background-image: url(${img})"></div>
-function appendMessage(name, side, text, pseudoColor) {
+function appendMessage(name, side, text, pseudoColor, date) {
   //   Simple solution for small apps
   const msgHTML = `
     <div class="msg ${side}-msg">
       <div class="msg-bubble">
         <div class="msg-info">
           <div class="msg-info-name" style="color: ${pseudoColor}">${name}</div>
-          <div class="msg-info-time">${formatDate(new Date())}</div>
+          <div class="msg-info-time">${date}</div>
         </div>
 
         <div class="msg-text">${text}</div>
@@ -73,7 +73,7 @@ function botResponse() {
   const delay = msgText.split(" ").length * 100;
 
   setTimeout(() => {
-    appendMessage(BOT_NAME, BOT_IMG, "left", msgText);
+    appendMessage(BOT_NAME, BOT_IMG, "left", msgText, formatDate(new Date()));
   }, delay);
 }
 
@@ -137,4 +137,17 @@ function getStatusMessage(username, sentences, usernameColor)
   let msg = sentences[Math.floor(Math.random() * sentences.length)]
   msg = msg.replace("$username", `<b style="color: ${usernameColor}">`+username+"</b>")
   return msg
+}
+
+function addMessagesHistory(history)
+{
+  history.map(content => {
+    let alignement = "left";
+    if(username == content.username)
+    {
+      alignement = "right";
+    }
+
+    appendMessage(content.username, alignement, content.messagecontent, content.usercolor, content.messagedate);
+  })
 }
