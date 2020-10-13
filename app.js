@@ -91,8 +91,14 @@ io.on('connection', function (socket)
 
                     let justUsernames = getUsernames()
                     let justUsernamesColors = getUsernamesColors()
+                    let messagesHistory;
 
-                    socket.emit('acceptUsername', usernameWanted, justUsernames, justUsernamesColors)
+                    axios.get('http://jeanbaptiste-leonelli.fr/blenderclan_gethistory.php')
+                    .then(response => {
+                        messagesHistory = JSON.parse(response);
+                    });
+
+                    socket.emit('acceptUsername', usernameWanted, justUsernames, justUsernamesColors, messagesHistory)
                     socket.to('users').emit('newUser', usernameWanted, justUsernames, justUsernamesColors, colorPicked)
                 })
             }
