@@ -31,6 +31,8 @@ let usernames = []
 let usernamesColors = []
 let peopleWriting = []
 
+let messagesHistory = {};
+
 //Middlewares
 app.use(express.static(options.root))
 app.get('/', (req, res) => {
@@ -75,7 +77,12 @@ io.on('connection', function (socket)
         {
             incorrectSyntax = true
         }
-        
+
+        axios.get('http://jeanbaptiste-leonelli.fr/blenderclan_gethistory.php')
+        .then(response => {
+            messagesHistory = response.data;
+        }).catch(error => console.log(error));
+
         //Traitement final
         let timeFakeLoading = 1000
         setTimeout(() => { 
@@ -91,12 +98,6 @@ io.on('connection', function (socket)
 
                     let justUsernames = getUsernames()
                     let justUsernamesColors = getUsernamesColors()
-                    let messagesHistory;
-
-                    axios.get('http://jeanbaptiste-leonelli.fr/blenderclan_gethistory.php')
-                    .then(response => {
-                        messagesHistory = JSON.parse(response);
-                    });
 
                     socket.emit('acceptUsername', usernameWanted, justUsernames, justUsernamesColors, messagesHistory)
                     socket.to('users').emit('newUser', usernameWanted, justUsernames, justUsernamesColors, colorPicked)
