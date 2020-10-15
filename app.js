@@ -123,7 +123,7 @@ io.on('connection', function (socket)
                 socket.emit('confirmMessage', text)
                 
                 axios
-                .post('http://jeanbaptiste-leonelli.fr/blenderclan_appendnewmessage.php', {
+                .post('http://jeanbaptiste-leonelli.fr/blenderclan_appendnewmessage.php?limit=500', {
                 username: usernames[socket.id],
                 usercolor: usernamesColors[usernames[socket.id]],
                 messagecontent: text,
