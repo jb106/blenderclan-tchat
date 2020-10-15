@@ -78,7 +78,7 @@ io.on('connection', function (socket)
             incorrectSyntax = true
         }
 
-        axios.get('http://jeanbaptiste-leonelli.fr/blenderclan_gethistory.php')
+        axios.get('http://jeanbaptiste-leonelli.fr/blenderclan_gethistory.php?limit=500')
         .then(response => {
             messagesHistory = response.data;
         }).catch(error => console.log(error));
@@ -123,7 +123,7 @@ io.on('connection', function (socket)
                 socket.emit('confirmMessage', text)
                 
                 axios
-                .post('http://jeanbaptiste-leonelli.fr/blenderclan_appendnewmessage.php?limit=500', {
+                .post('http://jeanbaptiste-leonelli.fr/blenderclan_appendnewmessage.php', {
                 username: usernames[socket.id],
                 usercolor: usernamesColors[usernames[socket.id]],
                 messagecontent: text,
